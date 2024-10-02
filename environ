@@ -1,0 +1,6 @@
+CPU: Intel Xeon Gold 5218 (8) @ 2.294GHz
+Memory: 2 GiB, DDR4
+OS: Ubuntu 24.04.1 LTS x86_64
+Editor: Visual Studio Code 1.93.1
+Compiler: gcc (Ubuntu 13.2.0-23ubuntu4) 13.2.0
+OpenMP: 201511
