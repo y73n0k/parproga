@@ -5,7 +5,7 @@
 
 int main(int argc, char** argv)
 {
-    const int count = 20000000;
+    const int count = 2000000000;
     const unsigned int threads = strtoul(argv[1], NULL, 10);
     const unsigned int random_seed = strtoul(argv[2], NULL, 10);
 
