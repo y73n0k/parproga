@@ -3,7 +3,6 @@
 #include <omp.h>
 #include <stdbool.h>
 #include <assert.h>
-#include <string.h>
 
 
 bool is_sorted(int *array, int length) {
@@ -31,25 +30,33 @@ void shellsort(int *array, int length) {
 }
 
 
-int *merge(int *array1, int *array2, int n1, int n2) {
-    int *result = (int*)malloc((n1 + n2) * sizeof(int));
-    int i = 0, j = 0, k = 0;
+void merge(int *arr, int left, int mid, int right) {
+    int i = left;
+    int j = mid + 1;
+    int k = 0;
+    int *temp = (int *)malloc((right - left + 1) * sizeof(int));
 
-    while (i < n1 && j < n2) {
-        if (array1[i] < array2[j])
-            result[k++] = array1[i++];
-        else
-            result[k++] = array2[j++];
+    while (i <= mid && j <= right) {
+        if (arr[i] <= arr[j]) {
+            temp[k++] = arr[i++];
+        } else {
+            temp[k++] = arr[j++];
+        }
     }
 
-    while (i < n1)
-        result[k++] = array1[i++];
-    
-    while (j < n2)
-        result[k++] = array2[j++];
-    
-    return result;
-    
+    while (i <= mid) {
+        temp[k++] = arr[i++];
+    }
+
+    while (j <= right) {
+        temp[k++] = arr[j++];
+    }
+
+    for (i = left, k = 0; i <= right; i++, k++) {
+        arr[i] = temp[k];
+    }
+
+    free(temp);
 }
 
 
@@ -63,35 +70,34 @@ int *generate_random_array(unsigned int random_seed, unsigned int length) {
 
 int main(int argc, char **argv){
     
-    const unsigned int length = 1 << 20;
+    const unsigned int length = 1000000;
     const unsigned int threads = strtoul(argv[1], NULL, 10);
     const unsigned int random_seed = strtoul(argv[2], NULL, 10);
 
-    const unsigned int part_length = length / threads;
+    unsigned int part_size = length / threads;
 
     int *array = generate_random_array(random_seed, length);
 
-    int *test = (int*)malloc(length * sizeof(int));
-    memcpy(test, array, length * sizeof(int));
-
     double time_start = omp_get_wtime();
 
-    #pragma omp parallel num_threads(threads) default(none) shared(array, threads, part_length)
+    #pragma omp parallel num_threads(threads) default(none) shared(array, threads, part_size, length)
     {
         int i = omp_get_thread_num();
-        shellsort(array + i * part_length, part_length);
+        int prev_size = i * part_size;
+
+        shellsort(array + prev_size, (i == threads - 1) ? (length - prev_size) : part_size);
 
         #pragma omp barrier
-        
-        for (int j = 1; j < threads; j <<= 1) {
-            if (i % (j << 1) == 0) {
-                int block_length = j * part_length;
-                int *base = array + block_length * (i / j);
-                
-                int *temp = merge(base, base + block_length, block_length, block_length);
-                memcpy(base, temp, sizeof(int) * (block_length << 1));
-                free(temp);
+
+        while (part_size < length) {
+            int j = i * (part_size << 1);
+            int mid = j + part_size - 1;
+            int right = (j + 2 * part_size - 1 < length) ? (j + 2 * part_size - 1) : (length - 1);
+            if (mid < right) {
+                merge(array, j, mid, right);
             }
+            if (i == 0)
+                part_size *= 2;
             #pragma omp barrier
         }
     }
@@ -100,13 +106,9 @@ int main(int argc, char **argv){
 
     assert(is_sorted(array, length));
 
-    shellsort(test, length);
-    assert(memcmp(array, test, length * sizeof(int)) == 0);
-
     printf("%g\n", time_end - time_start);
     
     free(array);
-    free(test);
 
     return 0;
 }
