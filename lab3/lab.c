@@ -96,6 +96,8 @@ int main(int argc, char **argv){
             if (mid < right) {
                 merge(array, j, mid, right);
             }
+            
+            #pragma omp barrier
             if (i == 0)
                 part_size *= 2;
             #pragma omp barrier
