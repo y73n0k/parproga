@@ -7,12 +7,14 @@ from pickle import dump, load
 
 
 RUNS = 20
-MAX_SYSTEM_THREADS = cpu_count()
+MAX_SYSTEM_THREADS = 8 #cpu_count()
 MAX_TEST_THREADS = MAX_SYSTEM_THREADS + MAX_SYSTEM_THREADS // 2
 MAX_INT = (1 << 32) - 1
 
 
-def generate_seeds():
+def generate_seeds(same_seed: bool):
+    if same_seed:
+        return [randint(0, MAX_INT)] * RUNS
     return [randint(0, MAX_INT) for _ in range(RUNS)]
 
 
@@ -32,16 +34,17 @@ def get_practical_time(path, nthreads, seeds):
     return result / RUNS
 
 
-def get_theoretical_time(base_point, xs):
-    return [base_point / min(i, MAX_SYSTEM_THREADS) for i in range(1, len(xs) + 1)]
+def get_theoretical_time(base_point, xs, func):
+    d = get_theoretical_acceleration(xs, func)
+    return [base_point / d[i] for i in range(len(xs))]
 
 
-def get_theoretical_efficiency(xs):
-    return [1 if x <= MAX_SYSTEM_THREADS else 1 / (x - MAX_SYSTEM_THREADS + 1) for  x in xs]
+def get_theoretical_efficiency(xs, func):
+    return [func(x) / x if x <= MAX_SYSTEM_THREADS else func(MAX_SYSTEM_THREADS) / x for x in xs]
 
 
-def get_theoretical_acceleration(xs):
-    return [x if x <= MAX_SYSTEM_THREADS else MAX_SYSTEM_THREADS for x in xs]
+def get_theoretical_acceleration(xs, func):
+    return [func(x) if x <= MAX_SYSTEM_THREADS else func(MAX_SYSTEM_THREADS) for x in xs]
 
 
 def get_practical_efficiency(time):
