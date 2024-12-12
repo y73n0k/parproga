@@ -4,6 +4,8 @@
 #include <stdbool.h>
 #include <assert.h>
 
+#include "delta.h"
+
 
 bool is_sorted(int *array, int length) {
     bool answer = true;
@@ -18,7 +20,9 @@ bool is_sorted(int *array, int length) {
 
 
 void shellsort(int *array, int length) {
-    for (int delta = length / 2; delta > 0; delta /= 2) {
+    int delta;
+    for (int k = 0; k < delta_size; ++k) {
+        delta = deltas[k];
         for (int i = delta; i < length; ++i) {
             for (int j = i - delta; j >= 0 && array[j] > array[j + delta]; j -= delta) {
                 int temp = array[j];
@@ -69,8 +73,7 @@ int *generate_random_array(unsigned int random_seed, unsigned int length) {
 
 
 int main(int argc, char **argv){
-    
-    const unsigned int length = 1000000;
+    const unsigned int length = 1 << 22;
     const unsigned int threads = strtoul(argv[1], NULL, 10);
     const unsigned int random_seed = strtoul(argv[2], NULL, 10);
 
@@ -109,7 +112,7 @@ int main(int argc, char **argv){
     assert(is_sorted(array, length));
 
     printf("%g\n", time_end - time_start);
-    
+
     free(array);
 
     return 0;
