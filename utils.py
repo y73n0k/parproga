@@ -12,7 +12,7 @@ MAX_TEST_THREADS = MAX_SYSTEM_THREADS + MAX_SYSTEM_THREADS // 2
 MAX_INT = (1 << 32) - 1
 
 
-def generate_seeds(same_seed: bool):
+def generate_seeds(same_seed: bool = False):
     if same_seed:
         return [randint(0, MAX_INT)] * RUNS
     return [randint(0, MAX_INT) for _ in range(RUNS)]
@@ -57,32 +57,39 @@ def get_practical_acceleration(time):
     return [base_point / t for t in time]
 
 
-def draw_graph(xs, y1, y2, label1, label2, ylabel, save_name):
-    fig, ax = plt.subplots()
-    ax.plot(xs, y1, label=label1)
-    ax.plot(xs, y2, label=label2)
-    ax.set_xlabel("Число потоков")
-    ax.set_ylabel(ylabel)
-    ax.legend()
+def init_subplots():
+    return plt.subplots()
 
+
+def save_fig(fig, ax, save_name):
+    ax.legend()
     fig.savefig(save_name)
 
 
-def draw_average_time(practical_time, xs):
+def draw_graph(ax, xs, ys, xlabel, ylabel):
+    ax.plot(xs, ys, label=xlabel)
+    ax.set_xlabel("Число потоков")
+    ax.set_ylabel(ylabel)
+
+
+def draw_average_time(ax, practical_time, xs):
     theoretical_time = get_theoretical_time(practical_time[0], xs)
-    draw_graph(xs, practical_time, theoretical_time, "Среднее время", "Теоритическое среднее время", "Время, с", "pics/time")
+    draw_graph(ax, xs, practical_time, "Среднее время", "Время, с")
+    draw_graph(ax, xs, theoretical_time, "Теоритическое среднее время", "Время, с")
 
 
-def draw_efficiency(practical_time, xs):
+def draw_efficiency(ax, practical_time, xs):
     theoretical_efficiency = get_theoretical_efficiency(xs)
     practical_efficiency = get_practical_efficiency(practical_time)
-    draw_graph(xs, practical_efficiency, theoretical_efficiency, "Эффективность", "Теоритическая эффективность", "", "pics/efficiency")
+    draw_graph(ax, xs, practical_efficiency, "Эффективность", "")
+    draw_graph(ax, xs, theoretical_efficiency, "Теоритическая эффективность", "")
 
 
-def draw_acceleration(practical_time, xs):
+def draw_acceleration(ax, practical_time, xs):
     theoretical_acceleration = get_theoretical_acceleration(xs)
     practical_acceleration = get_practical_acceleration(practical_time)
-    draw_graph(xs, practical_acceleration, theoretical_acceleration, "Ускорение", "Теоритическое ускорение", "", "pics/acceleration")
+    draw_graph(ax, xs, practical_acceleration, "Ускорение", "")
+    draw_graph(ax, xs, theoretical_acceleration, "Теоритическое ускорение", "")
 
 
 def dump_time(obj):
