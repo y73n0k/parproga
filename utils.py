@@ -92,14 +92,14 @@ def draw_acceleration(ax, practical_time, xs):
     draw_graph(ax, xs, theoretical_acceleration, "Теоритическое ускорение", "")
 
 
-def dump_time(obj):
-    with open("dump", "wb") as f:
+def dump_time(obj, name="dump"):
+    with open(name, "wb") as f:
         dump(obj, f)
 
 
-def load_time():
-    if exists("dump"):
-        with open("dump", "rb") as f:
+def load_time(name="dump"):
+    if exists(name):
+        with open(name, "rb") as f:
             return load(f)
     return None
 
