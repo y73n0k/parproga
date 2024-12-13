@@ -74,6 +74,7 @@ int *generate_random_array(unsigned int random_seed, unsigned int length) {
 
 int main(int argc, char **argv){
     const unsigned int length = 1 << 22;
+    unsigned int CHUNKS = 8;
     const unsigned int threads = strtoul(argv[1], NULL, 10);
     const unsigned int random_seed = strtoul(argv[2], NULL, 10);
 
@@ -83,26 +84,34 @@ int main(int argc, char **argv){
 
     double time_start = omp_get_wtime();
 
-    #pragma omp parallel num_threads(threads) default(none) shared(array, threads, part_size, length)
+
+    #pragma omp parallel num_threads(threads) default(none) shared(array, threads, part_size, length, CHUNKS)
     {
-        int i = omp_get_thread_num();
-        int prev_size = i * part_size;
+        #pragma omp for
+        for (unsigned int i = 0; i < CHUNKS; ++i) {
+            int prev_size = i * part_size;
+            int current_size = (i == CHUNKS - 1) ? (length - prev_size) : part_size;
 
-        shellsort(array + prev_size, (i == threads - 1) ? (length - prev_size) : part_size);
+            shellsort(array + prev_size, current_size);
+        }
 
-        #pragma omp barrier
+        while (CHUNKS > 0) {
+            #pragma omp for
+            for (int j = 0; j < CHUNKS; j += 1) {
+                int start = j * (part_size << 1);
+                int mid = start + part_size - 1;
+                int end = (start + 2 * part_size - 1 < length) ? (start + 2 * part_size - 1) : (length - 1);
 
-        while (part_size < length) {
-            int j = i * (part_size << 1);
-            int mid = j + part_size - 1;
-            int right = (j + 2 * part_size - 1 < length) ? (j + 2 * part_size - 1) : (length - 1);
-            if (mid < right) {
-                merge(array, j, mid, right);
+                if (mid < end) {
+                    merge(array, start, mid, end);
+                }
             }
-            
-            #pragma omp barrier
-            if (i == 0)
-                part_size *= 2;
+
+            #pragma omp single
+            {
+                part_size <<= 1;
+                CHUNKS >>= 1;
+            }
             #pragma omp barrier
         }
     }
