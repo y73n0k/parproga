@@ -1,4 +1,5 @@
-dump
+dump*
 __pycache__/
 pics/
 *.tex
+*.pdf
