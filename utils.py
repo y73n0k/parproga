@@ -62,12 +62,12 @@ def init_subplots():
 
 
 def save_fig(fig, ax, save_name):
-    ax.legend()
-    fig.savefig(save_name)
+    fig.legend(loc='center left', bbox_to_anchor=(0.95, 0.5))
+    fig.savefig(save_name, bbox_inches="tight")
 
 
 def draw_graph(ax, xs, ys, xlabel, ylabel):
-    ax.plot(xs, ys, label=xlabel)
+    ax.plot(xs, ys, label=xlabel, marker="o", linestyle="dashed")
     ax.set_xlabel("Число потоков")
     ax.set_ylabel(ylabel)
 
