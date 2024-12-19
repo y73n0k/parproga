@@ -18,9 +18,10 @@ int main(int argc, char** argv) {
     const unsigned long random_seed = strtoul(argv[1], NULL, 10);
 
     int rank, size;
-    int *array, *local_array, *sendcounts, *displs;
-    int local_max, global_max;
-    double start, end;
+    int *array;
+    int local_max = -1, global_max;
+    int begin, finish;
+    double start, middle_start, middle_end, end;
 
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -29,34 +30,31 @@ int main(int argc, char** argv) {
     int chunk_size = count / size;
     int remainder = count % size;
 
+    array = (int*)malloc(count * sizeof(int));
+
     if (!rank) {
         srand(random_seed);
-
-        sendcounts = (int*)malloc(size * sizeof(int));
-        displs = (int*)malloc(size * sizeof(int));
-
-        for (int i = 0; i < size; i++) {
-            sendcounts[i] = chunk_size + (!i ? remainder : 0);
-            displs[i] = i * chunk_size + remainder * (!i ? 0 : 1);
-        }
-
-        array = (int*)malloc(count * sizeof(int));
         for (int i = 0; i < count; i++) {
             array[i] = rand();
         }
     }
 
-    local_array = (int*)malloc((chunk_size + (!rank ? remainder: 0)) * sizeof(int));
-
     start = MPI_Wtime();
 
-    MPI_Scatterv(array, sendcounts, displs, MPI_INT, local_array, (chunk_size + (!rank ? remainder: 0)), MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(array, count, MPI_INT, 0, MPI_COMM_WORLD);
 
-    for (int i = 0; i < chunk_size; i++) {
-        if (local_array[i] > local_max) {
-            local_max = local_array[i];
+    middle_start = MPI_Wtime();
+
+    begin = rank * chunk_size;
+    finish = begin + chunk_size + (rank == size - 1 ? remainder : 0);
+
+    for (;begin < finish; ++begin) {
+        if (array[begin] > local_max) {
+            local_max = array[begin];
         }
     }
+
+    middle_end = MPI_Wtime();
 
     MPI_Reduce(&local_max, &global_max, 1, MPI_INT, MPI_MAX, 0, MPI_COMM_WORLD);
 
@@ -66,11 +64,10 @@ int main(int argc, char** argv) {
 
     if (!rank) {
         printf("======\nMax is: %d;\n", global_max);
+        printf("%g\n", middle_end - middle_start);
         printf("%g\n", end - start);
 
         assert(global_max == max(array, count));
-        free(sendcounts);
-        free(displs);
         free(array);
     }
 
