@@ -1,6 +1,6 @@
 from subprocess import Popen, PIPE
 import matplotlib.pyplot as plt
-from os import cpu_count
+from os import cpu_count, getenv
 from os.path import exists
 from random import randint
 from pickle import dump, load
@@ -10,6 +10,8 @@ RUNS = 20
 MAX_SYSTEM_THREADS = 8 #cpu_count()
 MAX_TEST_THREADS = MAX_SYSTEM_THREADS + MAX_SYSTEM_THREADS // 2
 MAX_INT = (1 << 32) - 1
+IS_MPI = getenv("IS_MPI", False)
+print(IS_MPI)
 
 
 def generate_seeds(same_seed: bool = False):
@@ -19,6 +21,12 @@ def generate_seeds(same_seed: bool = False):
 
 
 def run_lab(path, nthreads, seed):
+    if IS_MPI:
+        # Программа должна из аргументов принимать на вход сид
+        proc = Popen(f"mpirun -np {nthreads} {path} {seed}", shell=True, stdout=PIPE)
+        proc.wait()
+        return float(proc.stdout.readlines()[-1])
+        
     # Программа должна из аргументов принимать на вход количество потоков и сид
     proc = Popen(f"{path} {nthreads} {seed}", shell=True, stdout=PIPE)
     proc.wait()
