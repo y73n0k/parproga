@@ -1,4 +1,4 @@
-from subprocess import Popen, PIPE
+from subprocess import Popen, PIPE, run
 import matplotlib.pyplot as plt
 from os import cpu_count, getenv
 from os.path import exists
@@ -10,8 +10,8 @@ RUNS = 20
 MAX_SYSTEM_THREADS = 8 #cpu_count()
 MAX_TEST_THREADS = MAX_SYSTEM_THREADS + MAX_SYSTEM_THREADS // 2
 MAX_INT = (1 << 32) - 1
-IS_MPI = bool(getenv("IS_MPI", False))
-print(IS_MPI)
+IS_MPI = getenv("IS_MPI", False)
+IS_SEM = getenv("IS_SEM", False)
 
 
 def generate_seeds(same_seed: bool = False):
@@ -26,7 +26,11 @@ def run_lab(path, nthreads, seed):
         proc = Popen(f"mpirun --hostfile hostfile -np {nthreads} {path} {seed}", shell=True, stdout=PIPE)
         proc.wait()
         return float(proc.stdout.readlines()[-1])
-        
+    elif IS_SEM:
+        proc = Popen(f"cat ./input | {path} {nthreads}", shell=True, stdout=PIPE)
+        proc.wait()
+        return float(proc.stdout.readlines()[-1])
+
     # Программа должна из аргументов принимать на вход количество потоков и сид
     proc = Popen(f"{path} {nthreads} {seed}", shell=True, stdout=PIPE)
     proc.wait()
@@ -36,8 +40,13 @@ def run_lab(path, nthreads, seed):
 def get_practical_time(path, nthreads, seeds):
     result = 0
     print(f"Started {nthreads}")
-    for seed in seeds:
-        result += run_lab(path, nthreads, seed)
+    for i, seed in enumerate(seeds, start=1):
+        print(i, len(seeds))
+        try:
+            result += run_lab(path, nthreads, seed)
+        except Exception as e:
+            print("pass :(")
+            print(e)
     print(f"Done {nthreads}")
     return result / RUNS
 
