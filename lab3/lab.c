@@ -73,8 +73,8 @@ int *generate_random_array(unsigned int random_seed, unsigned int length) {
 
 
 int main(int argc, char **argv){
-    const unsigned int length = 1 << 22;
-    unsigned int CHUNKS = 8;
+    const unsigned int length = (1 << 22) + 19136;
+    unsigned int CHUNKS = 27720;
     const unsigned int threads = strtoul(argv[1], NULL, 10);
     const unsigned int random_seed = strtoul(argv[2], NULL, 10);
 
