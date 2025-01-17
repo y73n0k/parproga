@@ -29,7 +29,6 @@ int main(int argc, char** argv) {
 
     int chunk_size = count / size;
     int remainder = count % size;
-
     array = (int*)malloc(count * sizeof(int));
 
     if (!rank) {
@@ -40,9 +39,7 @@ int main(int argc, char** argv) {
     }
 
     start = MPI_Wtime();
-
     MPI_Bcast(array, count, MPI_INT, 0, MPI_COMM_WORLD);
-
     middle_start = MPI_Wtime();
 
     begin = rank * chunk_size;
@@ -55,9 +52,7 @@ int main(int argc, char** argv) {
     }
 
     middle_end = MPI_Wtime();
-
     MPI_Reduce(&local_max, &global_max, 1, MPI_INT, MPI_MAX, 0, MPI_COMM_WORLD);
-
     end = MPI_Wtime();
 
     MPI_Finalize();
@@ -66,7 +61,6 @@ int main(int argc, char** argv) {
         printf("======\nMax is: %d;\n", global_max);
         printf("%g\n", middle_end - middle_start);
         printf("%g\n", end - start);
-
         assert(global_max == max(array, count));
         free(array);
     }
